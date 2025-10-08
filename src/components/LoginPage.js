@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Sparkles, Leaf, BarChart3, Star, Circle } from 'lucide-react';
-import './SignUp.css';
+import './LoginPage.css';
 
-const SignUp = ({ onSignUp, onNavigateToLogin }) => {
+const LoginPage = ({ onLogin, onNavigateToSignup }) => {
   const [formData, setFormData] = useState({
-    fullName: '',
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -21,21 +20,26 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (agreeToTerms && onSignUp) {
-      onSignUp(formData.email, formData.password, formData.fullName);
+    if (onLogin) {
+      onLogin(formData.email, formData.password, rememberMe);
     }
   };
 
-  const handleNavigateToLogin = (e) => {
+  const handleCreateAccount = (e) => {
     e.preventDefault();
-    if (onNavigateToLogin) {
-      onNavigateToLogin();
+    if (onNavigateToSignup) {
+      onNavigateToSignup();
     }
+  };
+
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    console.log('Forgot password clicked');
   };
 
   return (
     <div className="page-frame">
-      <div className="signup-page">
+      <div className="login-page">
       {/* Left Side - Hero Section */}
       <div className="hero-section">
         <div className="hero-background">
@@ -45,11 +49,11 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
             <div className="brand-header">
               <div className="brand-icon">
                 <svg width="36" height="37" viewBox="0 0 36 37" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.80116 8.18487C8.90741 6.30252 10.5826 4.52847 12.7011 2.96447L12.9249 2.96296L14.7651 2.96191M10.3136 3.29017C10.4956 3.25334 10.6791 3.21992 10.864 3.18997C15.7577 5.2549 19.5496 8.21828 21.5327 11.5184M18.2471 2.96191L19.0816 2.96283C19.5229 2.96283 19.9598 2.98311 20.3907 3.02278C22.4719 4.57311 24.1188 6.3262 25.211 8.18487M12.0843 11.5184C14.0252 8.29947 17.6987 5.40199 22.4408 3.35035C22.6498 3.39431 22.8566 3.44329 23.0613 3.49663M31.1763 12.0872L31.569 13.6057C32.4101 16.8584 30.455 20.177 27.2024 21.0181C26.705 21.1467 26.1934 21.2117 25.6796 21.2117L6.92057 21.2122C3.56091 21.2122 0.837219 18.4888 0.837219 15.1292C0.837219 14.6154 0.902295 14.1036 1.03092 13.6061L1.4235 12.0879C2.81254 6.71594 7.65883 2.9633 13.2075 2.96301H19.3926C24.9411 2.96301 29.7874 6.71535 31.1763 12.0872Z" fill="white"/>
+                  <path d="M7.80116 8.08428C8.90741 6.20194 10.5826 4.42788 12.7011 2.86388L12.9249 2.86237L14.7651 2.86133M10.3136 3.18958C10.4956 3.15275 10.6791 3.11933 10.864 3.08938C15.7577 5.15431 19.5496 8.1177 21.5327 11.4179M18.2471 2.86133L19.0816 2.86225C19.5229 2.86224 19.9598 2.88253 20.3907 2.92219C22.4719 4.47252 24.1188 6.22561 25.211 8.08428M12.0843 11.4179C14.0252 8.19889 17.6987 5.3014 22.4408 3.24977C22.6498 3.29372 22.8566 3.34271 23.0613 3.39605M31.1763 11.9866L31.569 13.5051C32.4101 16.7578 30.455 20.0764 27.2024 20.9175C26.705 21.0461 26.1934 21.1112 25.6796 21.1112L6.92057 21.1117C3.56091 21.1117 0.837219 18.3882 0.837219 15.0286C0.837219 14.5148 0.902295 14.003 1.03092 13.5055L1.4235 11.9873C2.81254 6.61536 7.65883 2.86272 13.2075 2.86242H19.3926C24.9411 2.86242 29.7874 6.61476 31.1763 11.9866Z" fill="white"/>
                 </svg>
               </div>
               <h1 className="brand-title">Shelvy</h1>
-              <p className="brand-description">Smart bread freshness monitoring for modern bakeries</p>
+              <p className="brand-description">Welcome back to your bakery dashboard</p>
             </div>
 
             {/* Features */}
@@ -81,27 +85,11 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
       <div className="form-section">
         <div className="form-container">
           <div className="form-header">
-            <h2 className="form-title">Join the bakery!</h2>
-            <p className="form-subtitle">Start monitoring your bread quality today</p>
+            <h2 className="form-title">Welcome back!</h2>
+            <p className="form-subtitle">Sign in to monitor your bread quality</p>
           </div>
 
-          <form className="signup-form" onSubmit={handleSubmit}>
-            {/* Full Name Field */}
-            <div className="form-field">
-              <label className="field-label">👤 Full Name</label>
-              <div className="input-container">
-                <input
-                  type="text"
-                  name="fullName"
-                  className="form-input"
-                  placeholder="Enter your full name"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </div>
-
+          <form className="login-form" onSubmit={handleSubmit}>
             {/* Email Field */}
             <div className="form-field">
               <label className="field-label">📧 Email Address</label>
@@ -126,7 +114,7 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   className="form-input password-input"
-                  placeholder="Create a strong password"
+                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleInputChange}
                   required
@@ -141,36 +129,26 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
               </div>
             </div>
 
-            {/* Terms Agreement */}
-            <div className="terms-container">
-              <div className="checkbox-container">
+            {/* Remember Me and Forgot Password */}
+            <div className="form-options">
+              <div className="remember-me-container">
                 <button
                   type="button"
-                  className={`custom-checkbox ${agreeToTerms ? 'checked' : ''}`}
-                  onClick={() => setAgreeToTerms(!agreeToTerms)}
+                  className={`custom-checkbox ${rememberMe ? 'checked' : ''}`}
+                  onClick={() => setRememberMe(!rememberMe)}
                 >
-                  {agreeToTerms && <div className="checkbox-indicator"></div>}
+                  {rememberMe && <div className="checkbox-indicator"></div>}
                 </button>
-                <div className="terms-text">
-                  <p className="terms-line">
-                    📋 By joining our bakery family, I agree to the
-                  </p>
-                  <p className="terms-links">
-                    <a href="#" className="terms-link">Terms of Service</a>
-                    <span className="terms-and"> and </span>
-                    <a href="#" className="terms-link">Privacy Policy</a>
-                  </p>
-                </div>
+                <label className="remember-me-label">Remember me</label>
               </div>
+              <a href="#" className="forgot-password-link" onClick={handleForgotPassword}>
+                Forgot password?
+              </a>
             </div>
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              className={`submit-button ${agreeToTerms ? 'enabled' : 'disabled'}`}
-              disabled={!agreeToTerms}
-            >
-              ✨ Sign Up
+            <button type="submit" className="submit-button">
+              🔑 Sign In
             </button>
 
             {/* Divider */}
@@ -178,11 +156,11 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
               <span>or</span>
             </div>
 
-            {/* Sign In Link */}
-            <div className="signin-link-container">
-              <p className="signin-text">
-                Already part of the bakery?{' '}
-                <a href="#" className="signin-link" onClick={handleNavigateToLogin}>Sign in here</a>
+            {/* Sign Up Link */}
+            <div className="signup-link-container">
+              <p className="signup-text">
+                New to Shelvy?{' '}
+                <a href="#" className="signup-link" onClick={handleCreateAccount}>Create an account</a>
               </p>
             </div>
           </form>
@@ -200,4 +178,4 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
   );
 };
 
-export default SignUp;
+export default LoginPage;
