@@ -1,0 +1,80 @@
+body {
+    background-color: #f9f5ef;
+    font-family: "Poppins", sans-serif;
+  }
+  
+  .dashboard {
+    padding: 20px;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff3cd;
+    padding: 12px 20px;
+    border-radius: 8px;
+  }
+  
+  .menu-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  
+  .monitor-section h3,
+  .logs-section h3 {
+    text-align: center;
+    margin: 20px 0;
+    font-weight: bold;
+  }
+  
+  .monitor-cards {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+  }
+  
+  .card {
+    border-radius: 12px;
+    padding: 20px;
+    width: 40%;
+    text-align: center;
+  }
+  
+  .humidity {
+    background-color: #d9ebff;
+  }
+  
+  .temperature {
+    background-color: #ffe2c9;
+  }
+  
+  .bread-card {
+    background: white;
+    margin: 10px auto;
+    padding: 10px 15px;
+    width: 90%;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .logs-list {
+    height: 350px;
+    overflow-y: auto;
+    background: white;
+    border-radius: 10px;
+    padding: 10px;
+  }
+  
+  .log-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .log-item p {
+    margin: 0;
+    font-weight: 500;
+  }
+  

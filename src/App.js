@@ -2,41 +2,32 @@ import React, { useState } from 'react';
 import './App.css';
 import SignupPage from './components/SignupPage';
 import LoginPage from './components/LoginPage';
+import SidebarMenu from './components/SidebarMenu';
 
 function App() {
   const [page, setPage] = useState('login');
   const [user, setUser] = useState(null);
-  const [users, setUsers] = useState([]); // Simulate user database
+  const [users, setUsers] = useState([]);
+  const [isMenuOpen, setMenuOpen] = useState(false);
 
-  const handleLogin = (email, password, rememberMe) => {
-    console.log('Login attempt:', { email, password, rememberMe });
-
-    // Simple authentication simulation
+  const handleLogin = (email, password) => {
     const existingUser = users.find(u => u.email === email && u.password === password);
-
     if (existingUser) {
       setUser({ email, name: existingUser.name });
-      alert(`Welcome back, ${existingUser.name}!`);
     } else {
-      alert('Invalid credentials. Please sign up first or check your details.');
+      alert('Invalid credentials.');
     }
   };
 
   const handleSignUp = (email, password, fullName) => {
-    console.log('Sign up attempt:', { email, password, fullName });
-
-    // Check if user already exists
     const existingUser = users.find(u => u.email === email);
-
     if (existingUser) {
-      alert('User already exists! Please login instead.');
+      alert('User already exists.');
       setPage('login');
     } else {
-      // Add new user
       const newUser = { email, password, name: fullName };
       setUsers(prev => [...prev, newUser]);
       setUser({ email, name: fullName });
-      alert(`Welcome to Shelvy, ${fullName}!`);
     }
   };
 
@@ -45,89 +36,103 @@ function App() {
     setPage('login');
   };
 
-  const handleNavigateToSignup = () => {
-    setPage('signup');
-  };
-
-  const handleNavigateToLogin = () => {
-    setPage('login');
-  };
-
-  // If user is logged in, show dashboard
   if (user) {
     return (
-      <div className="App">
-        <div style={{
-          padding: '2rem',
-          textAlign: 'center',
-          background: '#FAF8F4',
-          minHeight: '100vh',
-          fontFamily: 'Inter, sans-serif'
-        }}>
-          <h1 style={{
-            color: '#3D2914',
-            fontFamily: 'Fredoka, sans-serif',
-            fontSize: '2.5rem',
-            marginBottom: '1rem'
-          }}>
+      <div className="App" style={{ background: '#FAF8F4', minHeight: '100vh' }}>
+        {/* Header with burger menu */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '20px 40px',
+            borderBottom: '2px solid #FBBF24',
+            background: '#FFF8E1',
+          }}
+        >
+          <h1
+            style={{
+              color: '#3D2914',
+              fontFamily: 'Fredoka, sans-serif',
+              fontSize: '1.8rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}
+          >
             🍞 Shelvy Dashboard
           </h1>
-          <div style={{
-            background: 'white',
+          <button
+            onClick={() => setMenuOpen(!isMenuOpen)}
+            style={{
+              fontSize: '1.5rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#3D2914',
+            }}
+          >
+            ☰
+          </button>
+        </div>
+
+        {/* Dashboard content */}
+        <div
+          style={{
             padding: '2rem',
-            borderRadius: '16px',
-            maxWidth: '600px',
-            margin: '0 auto',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.1)'
-          }}>
+            textAlign: 'center',
+            fontFamily: 'Inter, sans-serif',
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              padding: '2rem',
+              borderRadius: '16px',
+              maxWidth: '600px',
+              margin: '2rem auto',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            }}
+          >
             <h2 style={{ color: '#D97706', marginBottom: '1rem' }}>
               Welcome, {user.name}! 👋
             </h2>
             <p style={{ color: '#78716C', marginBottom: '2rem' }}>
               You're successfully logged in to your bakery monitoring system.
             </p>
-            <div style={{ marginBottom: '2rem' }}>
-              <p><strong>Email:</strong> {user.email}</p>
-              <p><strong>Users registered:</strong> {users.length}</p>
-            </div>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Users registered:</strong> {users.length}</p>
             <button
               onClick={handleLogout}
               style={{
-                background: 'linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FB923C 100%)',
+                background: 'linear-gradient(135deg, #D97706, #F59E0B)',
                 color: 'white',
                 border: 'none',
                 padding: '12px 24px',
                 borderRadius: '12px',
-                fontSize: '16px',
                 fontWeight: '600',
                 cursor: 'pointer',
-                transition: 'transform 0.2s ease'
+                marginTop: '20px',
               }}
-              onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-              onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
             >
               Logout
             </button>
           </div>
         </div>
+
+        {/* Sidebar for Logs & History */}
+        <SidebarMenu isOpen={isMenuOpen} onClose={() => setMenuOpen(false)} />
       </div>
     );
   }
 
   return (
     <div className="App">
-      {/* Render appropriate page */}
       {page === 'login' && (
-        <LoginPage
-          onLogin={handleLogin}
-          onNavigateToSignup={handleNavigateToSignup}
-        />
+        <LoginPage onLogin={handleLogin} onNavigateToSignup={() => setPage('signup')} />
       )}
       {page === 'signup' && (
-        <SignupPage
-          onSignUp={handleSignUp}
-          onNavigateToLogin={handleNavigateToLogin}
-        />
+        <SignupPage onSignUp={handleSignUp} onNavigateToLogin={() => setPage('login')} />
       )}
     </div>
   );
