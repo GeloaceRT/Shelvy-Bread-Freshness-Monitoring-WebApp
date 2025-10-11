@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import "./Dashboard.css";
+import "../styles/DashBoard.css";
+import SidebarMenu from "./SidebarMenu";
 
 export default function Dashboard() {
-  const [showLogs, setShowLogs] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const logs = [
     { event: "Humidity back to normal", time: "02:45 PM" },
@@ -17,13 +18,12 @@ export default function Dashboard() {
     <div className="dashboard">
       <header className="header">
         <h2>🍞 Shelvy Dashboard</h2>
-        <button className="menu-btn" onClick={() => setShowLogs(!showLogs)}>
+        <button className="menu-btn" onClick={() => setIsSidebarOpen(true)} aria-label="Open logs panel">
           ☰
         </button>
       </header>
 
-      {!showLogs ? (
-        <div className="monitor-section">
+      <div className="monitor-section">
           <h3>Monitor Levels</h3>
           <div className="monitor-cards">
             <div className="card humidity">
@@ -59,19 +59,9 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      ) : (
-        <div className="logs-section">
-          <h3>Logs & History</h3>
-          <div className="logs-list">
-            {logs.map((log, index) => (
-              <div key={index} className="log-item">
-                <p>{log.event}</p>
-                <small>{log.time}</small>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
+      {/* Off-canvas sidebar for logs */}
+      <SidebarMenu isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
     </div>
   );
 }
