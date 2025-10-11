@@ -5,6 +5,7 @@ import DevicesPage from "./DevicesPage";
 import MonitoringPage from "./MonitoringPage";
 import LogsHistoryPage from "./LogsHistoryPage";
 import SettingsPage from "./SettingsPage";
+import { TelemetryProvider } from "../hooks/TelemetryProvider";
 
 export default function Dashboard({ user, onLogout }) {
   const [activePage, setActivePage] = useState("home");
@@ -25,7 +26,8 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   return (
-    <div className="dashboard-container">
+    <TelemetryProvider>
+      <div className="dashboard-container">
       {/* Fixed Sidebar */}
       <div className="sidebar">
         {/* Logo and Title */}
@@ -115,6 +117,7 @@ export default function Dashboard({ user, onLogout }) {
       <div className="main-content">
         {renderPage()}
       </div>
-    </div>
+  </div>
+  </TelemetryProvider>
   );
 }
