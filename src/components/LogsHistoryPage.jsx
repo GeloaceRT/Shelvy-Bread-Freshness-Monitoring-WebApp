@@ -1,6 +1,22 @@
 import React from "react";
+import { useTelemetry } from "../hooks/TelemetryProvider";
+
+function formatTimestamp(isoDate) {
+  if (!isoDate) {
+    return "--";
+  }
+
+  const date = new Date(isoDate);
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+}
 
 export default function LogsHistoryPage() {
+  const telemetry = useTelemetry();
+  const logs = telemetry?.logs || [];
+  const devices = telemetry?.devices || [];
+
+  const resolveDevice = (deviceId) => devices.find((device) => device.id === deviceId);
+
   return (
     <div className="page-content">
       <div className="page-header">
@@ -8,17 +24,31 @@ export default function LogsHistoryPage() {
       </div>
 
       <div className="page-main-content">
-        <div className="page-content-container">
-          <div className="page-icon-container">
-            <svg width="41" height="41" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M25.3099 4.25293H10.3099C9.42584 4.25293 8.57799 4.60412 7.95287 5.22924C7.32775 5.85436 6.97656 6.70221 6.97656 7.58626V34.2529C6.97656 35.137 7.32775 35.9848 7.95287 36.61C8.57799 37.2351 9.42584 37.5863 10.3099 37.5863H30.3099C31.194 37.5863 32.0418 37.2351 32.6669 36.61C33.292 35.9848 33.6432 35.137 33.6432 34.2529V12.5863L25.3099 4.25293Z" stroke="#D97706" strokeWidth="3.33333" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M23.6431 4.25293V10.9196C23.6431 11.8037 23.9943 12.6515 24.6194 13.2766C25.2445 13.9017 26.0923 14.2529 26.9764 14.2529H33.6431" stroke="#D97706" strokeWidth="3.33333" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M16.9764 15.9199H13.6431" stroke="#D97706" strokeWidth="3.33333" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M26.9764 22.5869H13.6431" stroke="#D97706" strokeWidth="3.33333" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M26.9764 29.2529H13.6431" stroke="#D97706" strokeWidth="3.33333" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <p className="page-description">This section is coming soon! Stay tuned for updates.</p>
+        <div className="logs-list">
+          {logs.length === 0 && (
+            <div className="log-item log-info">
+              <div>
+                <p className="log-message">No events captured yet.</p>
+                <p className="log-meta">Start the telemetry stream to generate log entries.</p>
+              </div>
+            </div>
+          )}
+
+          {logs.map((log) => {
+            const device = resolveDevice(log.deviceId);
+            const deviceLabel = device ? `${device.name} · ${device.location}` : log.deviceId;
+            const logClass = log.type === "alert" ? "log-alert" : log.type === "metric" ? "log-metric" : "log-info";
+
+            return (
+              <div className={`log-item ${logClass}`} key={log.id}>
+                <div>
+                  <p className="log-message">{log.event}</p>
+                  <p className="log-meta">{deviceLabel}</p>
+                </div>
+                <span className="log-timestamp">{formatTimestamp(log.timestamp)}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
