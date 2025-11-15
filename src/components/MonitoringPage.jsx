@@ -1,13 +1,14 @@
 import React, { useMemo } from "react";
 import { useTelemetry } from "../hooks/TelemetryProvider";
+import LiveWebcam from './LiveWebcam';
 
 function formatClock(isoDate) {
   if (!isoDate) {
-    return "--";
+    return '--';
   }
 
   const date = new Date(isoDate);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 function formatSigned(value, unit) {
@@ -21,20 +22,20 @@ function formatSigned(value, unit) {
     return `0${unit}`;
   }
 
-  const prefix = rounded > 0 ? "+" : "";
+  const prefix = rounded > 0 ? '+' : '';
   return `${prefix}${rounded}${unit}`;
 }
 
 function formatRelativeTime(isoDate) {
   if (!isoDate) {
-    return "moments ago";
+    return 'moments ago';
   }
 
   const diffMs = Math.max(0, Date.now() - new Date(isoDate).getTime());
   const diffMinutes = Math.floor(diffMs / 60000);
 
   if (diffMinutes < 1) {
-    return "moments ago";
+    return 'moments ago';
   }
 
   if (diffMinutes < 60) {
@@ -43,11 +44,11 @@ function formatRelativeTime(isoDate) {
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${diffHours} hr${diffHours === 1 ? "" : "s"} ago`;
+    return `${diffHours} hr${diffHours === 1 ? '' : 's'} ago`;
   }
 
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
 }
 
 export default function MonitoringPage() {
@@ -76,6 +77,12 @@ export default function MonitoringPage() {
 
       <div className="page-main-content">
         <div className="monitoring-overview">
+
+          <div className="monitoring-card">
+            <h2 className="monitoring-card-title">Live Feed</h2>
+            <LiveWebcam />
+          </div>
+          
           <div className="monitoring-card">
             <h2 className="monitoring-card-title">Live Snapshot</h2>
             {summary && activeDevice ? (
@@ -94,11 +101,11 @@ export default function MonitoringPage() {
                 </div>
                 <div>
                   <span className="monitoring-label">Trend (temp)</span>
-                  <span className="monitoring-value">{formatSigned(summary.temperatureTrend, "°C")}</span>
+                  <span className="monitoring-value">{formatSigned(summary.temperatureTrend, '°C')}</span>
                 </div>
                 <div>
                   <span className="monitoring-label">Trend (humidity)</span>
-                  <span className="monitoring-value">{formatSigned(summary.humidityTrend, "%")}</span>
+                  <span className="monitoring-value">{formatSigned(summary.humidityTrend, '%')}</span>
                 </div>
                 <div>
                   <span className="monitoring-label">Last ping</span>
@@ -140,7 +147,7 @@ export default function MonitoringPage() {
                 <div className="monitoring-event-row" key={entry.id}>
                   <div>
                     <span className="monitoring-event-device">{device ? device.name : entry.deviceId}</span>
-                    <span className="monitoring-event-location">{device ? device.location : "Unknown location"}</span>
+                    <span className="monitoring-event-location">{device ? device.location : 'Unknown location'}</span>
                   </div>
                   <div className="monitoring-event-values">
                     <span>{entry.temperature}°C</span>
