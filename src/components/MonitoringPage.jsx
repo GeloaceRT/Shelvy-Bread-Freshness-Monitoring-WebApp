@@ -159,12 +159,8 @@ export default function MonitoringPage() {
                 <div className={`monitoring-event-row ${severityClass}`} key={entry.id}>
                   <div>
                     <span className="monitoring-event-device">{device ? device.name : entry.deviceId}</span>
-<<<<<<< Updated upstream
-                    <span className="monitoring-event-location">{device ? device.location : 'Unknown location'}</span>
-=======
                     <span className="monitoring-event-location">{device ? device.location : "Unknown location"}</span>
                     <span className={`monitoring-event-tag ${severityClass}`}>{entry.category || entry.severity || "INFO"}</span>
->>>>>>> Stashed changes
                   </div>
                   <div className="monitoring-event-values">
                     <span>{entry.temperature !== undefined && entry.temperature !== null ? `${entry.temperature}°C` : "—"}</span>

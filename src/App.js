@@ -132,7 +132,7 @@ function App() {
     setAuthError('');
   };
 
-  if (session?.token) {
+  if (session) {
     return (
       <Dashboard
         user={session.user}

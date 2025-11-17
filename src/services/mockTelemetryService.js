@@ -130,6 +130,13 @@ export default class MockTelemetryService {
       return;
     }
 
+    // Emit an immediate tick so UI receives values right after activation
+    try {
+      this.tick();
+    } catch (e) {
+      // ignore
+    }
+
     this.timer = setInterval(() => {
       this.tick();
     }, this.intervalMs);

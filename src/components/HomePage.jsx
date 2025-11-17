@@ -168,8 +168,8 @@ export default function HomePage({ user }) {
 
           <div className="device-list">
             {devices.map((device) => {
-              const isActiveDevice = device.id === activeDeviceId;
-              const isLive = isActiveDevice && device.status === "online";
+                const isActiveDevice = device.id === activeDeviceId;
+                const isLive = isActiveDevice;
               return (
                 <div className={`device-item ${isLive ? "active-device" : ""}`} key={device.id}>
                   <div className="device-header">

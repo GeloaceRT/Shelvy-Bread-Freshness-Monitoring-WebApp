@@ -45,6 +45,7 @@ const SEVERITY_CLASS_MAP = {
 export default function LogsHistoryPage() {
   const telemetry = useTelemetry();
   const logs = telemetry?.logs || [];
+  const alerts = telemetry?.alerts || [];
   const devices = telemetry?.devices || [];
   const { refresh } = telemetry || {};
   const canRefresh = typeof refresh === "function";
@@ -53,20 +54,65 @@ export default function LogsHistoryPage() {
   const [search, setSearch] = useState("");
 
   const filteredLogs = useMemo(() => {
-    return logs.filter((log) => {
-      const matchesFilter = filter === "all" || (log.category || log.type) === filter;
+    // Merge explicit alerts into the timeline so the Alerts filter shows alert records
+    const alertsAsLogs = (alerts || []).map((a) => ({
+      id: a.id,
+      timestamp: a.timestamp,
+      deviceId: a.deviceId,
+      event: a.title,
+      title: a.title,
+      message: a.value || a.message || "",
+      type: "alert",
+      category: "alert",
+      severity: a.severity || "critical",
+    }));
+
+    // Build a map to avoid duplicates (prefer logs entries over alertsAsLogs when id matches)
+    const mergedMap = new Map();
+    logs.forEach((l) => mergedMap.set(l.id, l));
+    alertsAsLogs.forEach((a) => {
+      if (!mergedMap.has(a.id)) {
+        mergedMap.set(a.id, a);
+      }
+    });
+
+    const combined = Array.from(mergedMap.values());
+
+    return combined.filter((log) => {
+      const typeKey = (log.category || log.type || "").toLowerCase();
+      const matchesFilter =
+        filter === "all" || (filter === "alert" ? typeKey === "alert" : typeKey === filter);
       const matchesSearch = search
-        ? log.message?.toLowerCase().includes(search.toLowerCase()) ||
-          log.title?.toLowerCase().includes(search.toLowerCase()) ||
-          log.deviceId?.toLowerCase().includes(search.toLowerCase())
+        ? (log.message || "").toLowerCase().includes(search.toLowerCase()) ||
+          (log.title || "").toLowerCase().includes(search.toLowerCase()) ||
+          (log.deviceId || "").toLowerCase().includes(search.toLowerCase())
         : true;
       return matchesFilter && matchesSearch;
     });
-  }, [logs, filter, search]);
+  }, [logs, alerts, filter, search]);
 
   const groupedLogs = useMemo(() => groupByDay(filteredLogs), [filteredLogs]);
 
   const resolveDevice = (deviceId) => devices.find((device) => device.id === deviceId);
+
+  const findAlertForLog = (log) => {
+    if (!log || !alerts || alerts.length === 0) return null;
+    // match by id first
+    const byId = alerts.find((a) => a.id === log.id);
+    if (byId) return byId;
+    // otherwise match by device and timestamp (within 5s)
+    const logTs = log.timestamp ? new Date(log.timestamp).getTime() : null;
+    if (logTs) {
+      const match = alerts.find((a) => {
+        if (!a.timestamp || a.deviceId !== log.deviceId) return false;
+        const aTs = new Date(a.timestamp).getTime();
+        return Math.abs(aTs - logTs) <= 5000;
+      });
+      if (match) return match;
+    }
+    // lastly try by deviceId and title similarity
+    return alerts.find((a) => a.deviceId === log.deviceId && a.title && log.event && a.title.includes(log.event)) || null;
+  };
 
   return (
     <div className="page-content">
@@ -124,8 +170,10 @@ export default function LogsHistoryPage() {
                   const device = resolveDevice(log.deviceId);
                   const deviceLabel = device ? `${device.name} · ${device.location}` : log.deviceId;
                   const timestampInfo = formatTimestamp(log.timestamp);
-                  const severity = (log.severity || "info").toLowerCase();
-                  const categoryLabel = (log.category || log.type || "EVENT").toUpperCase();
+                  // If this is an alert log, prefer showing the alert record details
+                  const matchedAlert = findAlertForLog(log);
+                  const severity = (matchedAlert?.severity || log.severity || "info").toLowerCase();
+                  const categoryLabel = (matchedAlert ? "ALERT" : (log.category || log.type || "EVENT")).toUpperCase();
                   const badgeClass = SEVERITY_CLASS_MAP[severity] || "log-info";
 
                   return (
@@ -138,8 +186,8 @@ export default function LogsHistoryPage() {
                       <div className="log-body">
                         <span className={`log-badge ${badgeClass}`}>{categoryLabel}</span>
                         <div className="log-copy">
-                          <p className="log-title">{log.title || log.event || "Telemetry event"}</p>
-                          <p className="log-message">{log.message || ""}</p>
+                          <p className="log-title">{matchedAlert?.title || log.title || log.event || "Telemetry event"}</p>
+                          <p className="log-message">{matchedAlert?.value || log.message || ""}</p>
                         </div>
                       </div>
 

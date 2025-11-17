@@ -10,11 +10,7 @@
     "lucide-react": "^0.545.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-<<<<<<< Updated upstream
-    "react-scripts": "5.0.1",
     "react-webcam": "^7.2.0",
-=======
->>>>>>> Stashed changes
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -43,6 +39,6 @@
   },
   "devDependencies": {
     "cypress": "^15.5.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "^5.0.1"
   }
 }

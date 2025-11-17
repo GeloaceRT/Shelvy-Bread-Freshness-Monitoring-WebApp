@@ -138,8 +138,9 @@ export default function DevicesPage() {
         <div className="devices-grid">
           {filteredDevices.map((device) => {
             const isActiveDevice = device.id === activeDeviceId;
-            const statusLabel = getStatusLabel({ ...device, isActive: isActiveDevice });
-            const isLive = isActiveDevice && device.status === "online";
+            // Treat the selected active device as live in the UI immediately
+            const statusLabel = getStatusLabel({ ...device, isActive: isActiveDevice, status: isActiveDevice ? 'online' : device.status });
+            const isLive = isActiveDevice;
             const batteryCategory = categorizeBattery(device.battery);
 
             return (

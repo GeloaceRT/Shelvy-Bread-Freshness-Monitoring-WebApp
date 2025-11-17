@@ -124,6 +124,26 @@ const NAVIGATION_ITEMS = [
 ];
 
 function DashboardContent({ user, onLogout }) {
+  function TelemetryToggle() {
+    const telemetry = useTelemetry();
+    if (!telemetry) return null;
+
+    const { mode, forceMock, forceLive } = telemetry;
+
+    const handleToggle = () => {
+      if (mode === 'mock') {
+        if (typeof forceLive === 'function') forceLive();
+      } else {
+        if (typeof forceMock === 'function') forceMock();
+      }
+    };
+
+    return (
+      <button type="button" className="toolbar-button" onClick={handleToggle}>
+        {mode === 'mock' ? 'Use Live Telemetry' : 'Use Mock Telemetry'}
+      </button>
+    );
+  }
   const [activePage, setActivePage] = useState("home");
   const telemetry = useTelemetry();
 
@@ -188,15 +208,38 @@ function DashboardContent({ user, onLogout }) {
       </div>
 
       <div className="main-content">
+        <div style={{display: 'flex', gap: 8, justifyContent: 'flex-end', padding: '8px 16px'}}>
+          {/* Manual mock toggle for development/testing */}
+          <TelemetryToggle />
+        </div>
         {telemetry.banner && (
           <div className={`alert-banner ${telemetry.banner.severity}`}>
             <div>
               <strong>{telemetry.banner.title}</strong>
               <span>{telemetry.banner.message}</span>
+              {telemetry.banner.deviceName && (
+                <div className="banner-device">
+                  <small>{telemetry.banner.deviceName} — {telemetry.banner.deviceLocation}</small>
+                </div>
+              )}
             </div>
-            <button type="button" onClick={() => telemetry.dismissBanner(telemetry.banner.id)}>
-              Dismiss
-            </button>
+            <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
+              <button
+                type="button"
+                className="view-alerts-btn"
+                onClick={() => {
+                  if (typeof telemetry.setActiveDevice === 'function' && telemetry.banner.deviceId) {
+                    telemetry.setActiveDevice(telemetry.banner.deviceId);
+                  }
+                  setActivePage('logs');
+                }}
+              >
+                View Alerts
+              </button>
+              <button type="button" onClick={() => telemetry.dismissBanner(telemetry.banner.id)}>
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 

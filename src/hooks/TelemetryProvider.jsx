@@ -55,15 +55,14 @@ const mapAlertHistory = (alertHistory, capturedAtIso) => {
   if (!alertHistory || !Array.isArray(alertHistory.alerts)) {
     return [];
   }
-
   return alertHistory.alerts
     .map((alert) => {
       const timestamp = ensureIsoString(alert.createdAt || capturedAtIso);
       const severity = (alert.level || "critical").toLowerCase();
 
       return {
-        id: `alert-${alert.id ?? timestamp}`,
-        deviceId: BASE_DEVICE.id,
+        id: alert.id || `alert-${timestamp}`,
+        deviceId: alert.deviceId || BASE_DEVICE.id,
         level: alert.level || "critical",
         severity,
         timestamp,
@@ -141,16 +140,74 @@ export function TelemetryProvider({
     if (!mockServiceRef.current) {
       mockServiceRef.current = new MockTelemetryService();
     }
-
     const service = mockServiceRef.current;
     if (mockHandlerRef.current) {
       service.unsubscribe(mockHandlerRef.current);
     }
 
     const handler = (snapshot) => {
+      // Build a candidate banner from mock alerts (show warnings/critical)
+      const alertsArray = Array.isArray(snapshot.alerts) ? snapshot.alerts : [];
+      let candidateBanner = null;
+      if (alertsArray.length > 0) {
+        const first = alertsArray[0];
+        const timestamp = first.timestamp || snapshot.lastUpdated || new Date().toISOString();
+        const severity = (first.severity || 'critical').toLowerCase();
+        // Only surface warnings or criticals as banners
+        if (severity === 'critical' || severity === 'warning') {
+          // try to find device info in snapshot.devices
+          const device = Array.isArray(snapshot.devices) ? snapshot.devices.find(d => d.id === first.deviceId) : null;
+          candidateBanner = {
+            id: `${timestamp}:${first.id ?? 'mock'}`,
+            severity: severity === 'critical' ? 'critical' : 'warning',
+            title: first.title || 'Critical freshness alert',
+            message: first.value || first.title || 'Sensor alert',
+            timestamp,
+            deviceId: first.deviceId || (device ? device.id : BASE_DEVICE.id),
+            deviceName: device ? device.name : (first.deviceId || BASE_DEVICE.name),
+            deviceLocation: device ? device.location : BASE_DEVICE.location,
+          };
+        }
+      }
+
+      const resolvedBanner = (() => {
+        if (!candidateBanner) return null;
+        if (dismissedBannerIdsRef.current.has(candidateBanner.id)) return null;
+        return candidateBanner;
+      })();
+
+      // ensure persistent alert/log entries so the Alerts (Logs & History) tab retains the banner
+      const nextAlerts = Array.isArray(snapshot.alerts) ? [...snapshot.alerts] : [];
+      const nextLogs = Array.isArray(snapshot.logs) ? [...snapshot.logs] : [];
+
+      if (resolvedBanner) {
+        const alertRecord = {
+          id: resolvedBanner.id,
+          deviceId: resolvedBanner.deviceId || BASE_DEVICE.id,
+          title: resolvedBanner.title,
+          severity: resolvedBanner.severity || 'critical',
+          timestamp: resolvedBanner.timestamp || new Date().toISOString(),
+          value: resolvedBanner.message || resolvedBanner.title,
+        };
+
+        if (!nextAlerts.find((a) => a.id === alertRecord.id)) {
+          nextAlerts.unshift(alertRecord);
+        }
+
+        nextLogs.unshift({
+          id: `log-${Date.now()}`,
+          timestamp: alertRecord.timestamp,
+          deviceId: alertRecord.deviceId,
+          event: alertRecord.title,
+          type: 'alert',
+        });
+      }
+
       setState({
         ...snapshot,
-        banner: null,
+        alerts: nextAlerts,
+        logs: nextLogs.slice(0, LOG_LIMIT),
+        banner: resolvedBanner,
         status: "mock",
         error: null,
       });
@@ -159,6 +216,10 @@ export function TelemetryProvider({
     mockHandlerRef.current = handler;
     service.subscribe(handler);
     service.start();
+    // Emit an immediate tick so UI shows readings right after activating mock mode
+    if (typeof service.tick === 'function') {
+      service.tick();
+    }
 
     modeRef.current = "mock";
     setMode("mock");
@@ -228,12 +289,28 @@ export function TelemetryProvider({
 
     const alertMessages = Array.isArray(alertMessagesPayload?.alerts) ? alertMessagesPayload.alerts : [];
     const convertedAlerts = mapAlertHistory(alertHistoryPayload, capturedAtIso);
-    const candidateBanner = alertMessages.length
+      const nextDevices = [
+        {
+          ...BASE_DEVICE,
+          temperature,
+          humidity,
+          battery: null,
+          status: "online",
+          isActive: true,
+          lastUpdated: capturedAtIso,
+        },
+      ];
+
+      const candidateBanner = alertMessages.length
       ? {
           id: `${capturedAtIso}:${alertMessages.join("|")}`,
           severity: "critical",
           title: "Critical freshness alert",
           message: alertMessages[0],
+          // attach device info when available
+            deviceId: nextDevices && nextDevices[0] ? nextDevices[0].id : BASE_DEVICE.id,
+            deviceName: nextDevices && nextDevices[0] ? nextDevices[0].name : BASE_DEVICE.name,
+            deviceLocation: nextDevices && nextDevices[0] ? nextDevices[0].location : BASE_DEVICE.location,
           timestamp: capturedAtIso,
         }
       : null;
@@ -252,18 +329,7 @@ export function TelemetryProvider({
             ...current.history.filter((entry) => entry.id !== readingEntryId),
           ].slice(0, HISTORY_LIMIT)
         : current.history;
-
-      const nextDevices = [
-        {
-          ...BASE_DEVICE,
-          temperature,
-          humidity,
-          battery: null,
-          status: "online",
-          isActive: true,
-          lastUpdated: capturedAtIso,
-        },
-      ];
+      // reuse `nextDevices` computed above
 
       const resolvedBanner = (() => {
         if (!candidateBanner) {
@@ -424,15 +490,47 @@ export function TelemetryProvider({
     if (!deviceId) {
       return;
     }
-
+    // If in mock mode, call the mock service but also update local state optimistically
     if (modeRef.current === "mock") {
       const service = mockServiceRef.current;
       if (service && typeof service.setActiveDevice === "function") {
-        service.setActiveDevice(deviceId);
+        try {
+          service.setActiveDevice(deviceId);
+        } catch (err) {
+          // ignore service errors
+        }
       }
+
+      // Optimistically update UI so device switch feels immediate
+      setState((current) => {
+        if (!current.devices || !current.devices.some((d) => d.id === deviceId)) {
+          return current;
+        }
+
+        if (current.activeDeviceId === deviceId) return current;
+
+        return {
+          ...current,
+          devices: current.devices.map((device) => ({
+            ...device,
+            isActive: device.id === deviceId,
+            status: device.id === deviceId ? "online" : device.status,
+          })),
+          activeDeviceId: deviceId,
+          summary: {
+            ...current.summary,
+            deviceId,
+            // attempt to set summary readings to the selected device readings
+            temperature: (current.devices.find((d) => d.id === deviceId) || {}).temperature ?? current.summary.temperature,
+            humidity: (current.devices.find((d) => d.id === deviceId) || {}).humidity ?? current.summary.humidity,
+          },
+        };
+      });
+
       return;
     }
 
+    // live mode: update state to mark the chosen device as active
     setState((current) => {
       if (!current.devices.some((device) => device.id === deviceId)) {
         return current;
@@ -442,16 +540,21 @@ export function TelemetryProvider({
         return current;
       }
 
+      const selected = current.devices.find((d) => d.id === deviceId) || {};
+
       return {
         ...current,
         devices: current.devices.map((device) => ({
           ...device,
           isActive: device.id === deviceId,
+          status: device.id === deviceId ? "online" : device.status,
         })),
         activeDeviceId: deviceId,
         summary: {
           ...current.summary,
           deviceId,
+          temperature: selected.temperature ?? current.summary.temperature,
+          humidity: selected.humidity ?? current.summary.humidity,
         },
       };
     });
@@ -493,8 +596,11 @@ export function TelemetryProvider({
       setActiveDevice,
       dismissBanner,
       refresh,
+      // Expose controls so UI can force mock/live modes
+      forceMock: activateMock,
+      forceLive: deactivateMock,
     }),
-    [mode, state, setActiveDevice, dismissBanner, refresh]
+    [mode, state, setActiveDevice, dismissBanner, refresh, activateMock, deactivateMock]
   );
 
   return <TelemetryContext.Provider value={contextValue}>{children}</TelemetryContext.Provider>;
