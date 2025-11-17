@@ -406,6 +406,13 @@
     0 0 0 1px rgba(255, 255, 255, 0.20) inset;
 }
 
+.submit-button:disabled {
+  cursor: default;
+  opacity: 0.75;
+  transform: none;
+  box-shadow: 0 6px 12px -6px rgba(217, 119, 6, 0.35);
+}
+
 .form-divider {
   position: relative;
   height: 20px;

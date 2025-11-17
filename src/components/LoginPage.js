@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Sparkles, Leaf, BarChart3, Star, Circle } from 'lucide-react';
 import './LoginPage.css';
 
-const LoginPage = ({ onLogin, onNavigateToSignup }) => {
+const LoginPage = ({ onLogin, onNavigateToSignup, loading = false, error = '' }) => {
   const [formData, setFormData] = useState({
-    email: '',
+    identifier: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -20,8 +20,8 @@ const LoginPage = ({ onLogin, onNavigateToSignup }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onLogin) {
-      onLogin(formData.email, formData.password, rememberMe);
+    if (onLogin && !loading) {
+      onLogin(formData.identifier, formData.password, rememberMe);
     }
   };
 
@@ -92,14 +92,14 @@ const LoginPage = ({ onLogin, onNavigateToSignup }) => {
           <form className="login-form" onSubmit={handleSubmit}>
             {/* Email Field */}
             <div className="form-field">
-              <label className="field-label">📧 Email Address</label>
+              <label className="field-label">📧 Email or Username</label>
               <div className="input-container">
                 <input
-                  type="email"
-                  name="email"
+                  type="text"
+                  name="identifier"
                   className="form-input"
-                  placeholder="Enter your email address"
-                  value={formData.email}
+                  placeholder="Enter your email or username"
+                  value={formData.identifier}
                   onChange={handleInputChange}
                   required
                 />
@@ -147,8 +147,8 @@ const LoginPage = ({ onLogin, onNavigateToSignup }) => {
             </div>
 
             {/* Submit Button */}
-            <button type="submit" className="submit-button">
-              🔑 Sign In
+            <button type="submit" className="submit-button" disabled={loading}>
+              {loading ? 'Signing in…' : '🔑 Sign In'}
             </button>
 
             {/* Divider */}
@@ -163,6 +163,7 @@ const LoginPage = ({ onLogin, onNavigateToSignup }) => {
                 <a href="#" className="signup-link" onClick={handleCreateAccount}>Create an account</a>
               </p>
             </div>
+            {error && <div className="auth-inline-error">{error}</div>}
           </form>
         </div>
       </div>

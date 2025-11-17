@@ -53,9 +53,9 @@ function formatRelativeTime(isoDate) {
 
 export default function MonitoringPage() {
   const telemetry = useTelemetry();
-  const devices = telemetry?.devices || [];
-  const history = telemetry?.history || [];
-  const summary = telemetry?.summary;
+  const { devices = [], history = [], summary, logs = [], refresh, status } = telemetry || {};
+  const canRefresh = typeof refresh === "function";
+  const handleRefresh = canRefresh ? refresh : () => {};
 
   const activeDevice = devices.find((device) => device.isActive) || devices[0];
 
@@ -67,7 +67,7 @@ export default function MonitoringPage() {
     return history.filter((entry) => entry.deviceId === activeDevice.id).slice(0, 12);
   }, [history, activeDevice]);
 
-  const recentEvents = useMemo(() => history.slice(0, 12), [history]);
+  const recentEvents = useMemo(() => logs.slice(0, 12), [logs]);
 
   return (
     <div className="page-content">
@@ -76,6 +76,17 @@ export default function MonitoringPage() {
       </div>
 
       <div className="page-main-content">
+        <div className="page-toolbar">
+          <button
+            type="button"
+            className="toolbar-button"
+            onClick={handleRefresh}
+            disabled={!canRefresh || status === "loading"}
+          >
+            {status === "loading" ? "Refreshing…" : "Refresh"}
+          </button>
+        </div>
+
         <div className="monitoring-overview">
 
           <div className="monitoring-card">
@@ -143,17 +154,24 @@ export default function MonitoringPage() {
             {recentEvents.length === 0 && <p className="monitoring-empty">Waiting for telemetry updates...</p>}
             {recentEvents.map((entry) => {
               const device = devices.find((item) => item.id === entry.deviceId);
+              const severityClass = entry.severity ? entry.severity.toLowerCase() : "info";
               return (
-                <div className="monitoring-event-row" key={entry.id}>
+                <div className={`monitoring-event-row ${severityClass}`} key={entry.id}>
                   <div>
                     <span className="monitoring-event-device">{device ? device.name : entry.deviceId}</span>
+<<<<<<< Updated upstream
                     <span className="monitoring-event-location">{device ? device.location : 'Unknown location'}</span>
+=======
+                    <span className="monitoring-event-location">{device ? device.location : "Unknown location"}</span>
+                    <span className={`monitoring-event-tag ${severityClass}`}>{entry.category || entry.severity || "INFO"}</span>
+>>>>>>> Stashed changes
                   </div>
                   <div className="monitoring-event-values">
-                    <span>{entry.temperature}°C</span>
-                    <span>{entry.humidity}%</span>
+                    <span>{entry.temperature !== undefined && entry.temperature !== null ? `${entry.temperature}°C` : "—"}</span>
+                    <span>{entry.humidity !== undefined && entry.humidity !== null ? `${entry.humidity}%` : "—"}</span>
                     <span>{formatClock(entry.timestamp)}</span>
                   </div>
+                  <p className="monitoring-event-message">{entry.message}</p>
                 </div>
               );
             })}

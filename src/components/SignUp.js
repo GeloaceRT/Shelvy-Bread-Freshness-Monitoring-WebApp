@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Sparkles, Leaf, BarChart3, Star, Circle } from 'lucide-react';
 import './SignUp.css';
 
-const SignUp = ({ onSignUp, onNavigateToLogin }) => {
+const SignUp = ({ onSignUp, onNavigateToLogin, loading = false, error = '' }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,7 +21,7 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (agreeToTerms && onSignUp) {
+    if (agreeToTerms && onSignUp && !loading) {
       onSignUp(formData.email, formData.password, formData.fullName);
     }
   };
@@ -168,9 +168,9 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
             <button
               type="submit"
               className={`submit-button ${agreeToTerms ? 'enabled' : 'disabled'}`}
-              disabled={!agreeToTerms}
+              disabled={!agreeToTerms || loading}
             >
-              ✨ Sign Up
+              {loading ? 'Creating account…' : '✨ Sign Up'}
             </button>
 
             {/* Divider */}
@@ -185,6 +185,7 @@ const SignUp = ({ onSignUp, onNavigateToLogin }) => {
                 <a href="#" className="signin-link" onClick={handleNavigateToLogin}>Sign in here</a>
               </p>
             </div>
+            {error && <div className="auth-inline-error">{error}</div>}
           </form>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { useTelemetry } from "../hooks/TelemetryProvider";
 
 function formatRelativeTime(isoDate) {
@@ -38,27 +38,109 @@ function getStatusLabel(device) {
   return "Offline";
 }
 
+const BATTERY_STATUS = {
+  high: 70,
+  medium: 30,
+};
+
+const filterOptions = [
+  { value: "all", label: "All" },
+  { value: "live", label: "Live" },
+  { value: "standby", label: "Standby" },
+  { value: "offline", label: "Offline" },
+];
+
+const categorizeBattery = (value) => {
+  if (value === null || value === undefined) {
+    return "unknown";
+  }
+  if (value >= BATTERY_STATUS.high) {
+    return "high";
+  }
+  if (value >= BATTERY_STATUS.medium) {
+    return "medium";
+  }
+  return "low";
+};
+
 export default function DevicesPage() {
-  const { devices = [], setActiveDevice, summary } = useTelemetry();
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const { devices = [], setActiveDevice, summary, refresh } = useTelemetry();
+  const canRefresh = typeof refresh === "function";
+  const handleRefresh = canRefresh ? refresh : () => {};
   const activeDeviceId = summary?.deviceId;
+
+  const filteredDevices = useMemo(() => {
+    return devices.filter((device) => {
+      const matchesFilter = (() => {
+        if (filter === "all") {
+          return true;
+        }
+        if (filter === "live") {
+          return device.status === "online" && device.isActive;
+        }
+        if (filter === "standby") {
+          return device.status === "online" && !device.isActive;
+        }
+        if (filter === "offline") {
+          return device.status !== "online";
+        }
+        return true;
+      })();
+
+      const matchesSearch = search
+        ? device.name.toLowerCase().includes(search.toLowerCase()) ||
+          device.location.toLowerCase().includes(search.toLowerCase())
+        : true;
+
+      return matchesFilter && matchesSearch;
+    });
+  }, [devices, filter, search]);
 
   return (
     <div className="page-content">
       <div className="page-header">
         <h1 className="page-title">Devices</h1>
+        <div className="page-header-actions">
+          <button type="button" className="toolbar-button" onClick={handleRefresh} disabled={!canRefresh}>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="page-main-content">
         <div className="devices-toolbar">
-          <p className="devices-count">{devices.length} device{devices.length === 1 ? "" : "s"} connected</p>
-          <button type="button" className="add-device-button">+ Add device</button>
+          <div className="devices-toolbar-group">
+            <p className="devices-count">{devices.length} device{devices.length === 1 ? "" : "s"} connected</p>
+            <div className="device-filters">
+              <select className="device-filter-select" value={filter} onChange={(event) => setFilter(event.target.value)}>
+                {filterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="search"
+                className="device-filter-search"
+                placeholder="Search devices"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          </div>
+          <button type="button" className="add-device-button" disabled>
+            + Add device
+          </button>
         </div>
 
         <div className="devices-grid">
-          {devices.map((device) => {
+          {filteredDevices.map((device) => {
             const isActiveDevice = device.id === activeDeviceId;
             const statusLabel = getStatusLabel({ ...device, isActive: isActiveDevice });
             const isLive = isActiveDevice && device.status === "online";
+            const batteryCategory = categorizeBattery(device.battery);
 
             return (
               <div className={`device-card ${isActiveDevice ? "device-card-active" : ""}`} key={device.id}>
@@ -83,7 +165,9 @@ export default function DevicesPage() {
                   </div>
                   <div className="device-metric">
                     <span className="device-metric-label">Battery</span>
-                    <span className="device-metric-value">{device.battery}%</span>
+                    <span className={`device-metric-value battery-${batteryCategory}`}>
+                      {device.battery !== null && device.battery !== undefined ? `${device.battery}%` : "—"}
+                    </span>
                   </div>
                 </div>
 
@@ -105,7 +189,7 @@ export default function DevicesPage() {
             );
           })}
 
-          {devices.length === 0 && (
+          {filteredDevices.length === 0 && (
             <div className="page-content-container">
               <div className="page-icon-container">
                 <svg width="41" height="41" viewBox="0 0 41 41" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -114,7 +198,7 @@ export default function DevicesPage() {
                   <path d="M20.31 37.5866V20.9199" stroke="#D97706" strokeWidth="3.33333" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <p className="page-description">No devices connected yet. Start the mock telemetry to populate this view.</p>
+              <p className="page-description">No devices match the current filters. Adjust search or connect a device.</p>
             </div>
           )}
         </div>
