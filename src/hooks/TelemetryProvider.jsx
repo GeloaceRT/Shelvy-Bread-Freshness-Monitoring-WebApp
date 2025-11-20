@@ -180,6 +180,11 @@ export function TelemetryProvider({
       const nextAlerts = Array.isArray(snapshot.alerts) ? [...snapshot.alerts] : [];
       const nextLogs = Array.isArray(snapshot.logs) ? [...snapshot.logs] : [];
 
+      // Mark devices with a global alert flag so UI can show alerts across all casings
+      const devicesWithAlert = Array.isArray(snapshot.devices)
+        ? snapshot.devices.map((d) => ({ ...d, hasAlert: nextAlerts.length > 0 }))
+        : [];
+
       if (resolvedBanner) {
         const alertRecord = {
           id: resolvedBanner.id,
@@ -205,6 +210,7 @@ export function TelemetryProvider({
 
       setState({
         ...snapshot,
+        devices: devicesWithAlert,
         alerts: nextAlerts,
         logs: nextLogs.slice(0, LOG_LIMIT),
         banner: resolvedBanner,
@@ -402,6 +408,19 @@ export function TelemetryProvider({
           .slice(0, LOG_LIMIT);
       })();
 
+      // Merge existing devices with the newly computed nextDevices and mark a global alert flag
+      const mergedDevicesMap = new Map();
+      (current.devices || []).forEach((d) => mergedDevicesMap.set(d.id, { ...d }));
+      (nextDevices || []).forEach((d) => {
+        const existing = mergedDevicesMap.get(d.id) || {};
+        mergedDevicesMap.set(d.id, { ...existing, ...d });
+      });
+
+      const mergedDevices = Array.from(mergedDevicesMap.values()).map((d) => ({
+        ...d,
+        hasAlert: convertedAlerts && convertedAlerts.length > 0,
+      }));
+
       return {
         summary: {
           temperature,
@@ -411,7 +430,7 @@ export function TelemetryProvider({
           lastUpdated: capturedAtIso,
           deviceId: BASE_DEVICE.id,
         },
-        devices: nextDevices,
+        devices: mergedDevices,
         alerts: convertedAlerts,
         logs: nextLogs,
         history: nextHistory,

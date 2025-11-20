@@ -3,7 +3,7 @@ import './App.css';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import Dashboard from './components/DashBoard';
-import { DEFAULT_API_BASE_URL } from './services/apiClient';
+import { DEFAULT_API_BASE_URL, createApiClient } from './services/apiClient';
 
 const STORAGE_KEY = 'shelvy.session';
 
@@ -78,12 +78,36 @@ function App() {
     remember: Boolean(remember),
   });
 
-  const handleLogin = (identifier, password, rememberMe) => {
+  const handleLogin = async (identifier, password, rememberMe) => {
     setLoading(true);
     setAuthError('');
 
+    const trimmedIdentifier = safeTrim(identifier) || 'baker';
+
     try {
-      const trimmedIdentifier = safeTrim(identifier) || 'baker';
+      // If a backend URL is configured, attempt real auth against it
+      if (DEFAULT_API_BASE_URL) {
+        const client = createApiClient(DEFAULT_API_BASE_URL);
+        const resp = await client.authLogin(trimmedIdentifier, password);
+        if (resp && resp.token) {
+          const user = resp.user || {};
+          setSession(
+            establishSession(
+              {
+                id: user.id || null,
+                username: user.username || trimmedIdentifier,
+                displayName: user.displayName || formatDisplayName(user.fullName || '', trimmedIdentifier),
+                token: resp.token,
+              },
+              !!rememberMe
+            )
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fallback: local session (no backend or login failed)
       const displayName = formatDisplayName('', trimmedIdentifier);
       setSession(
         establishSession(
@@ -102,12 +126,35 @@ function App() {
     }
   };
 
-  const handleSignUp = (identifier, password, fullName) => {
+  const handleSignUp = async (identifier, password, fullName) => {
     setLoading(true);
     setAuthError('');
 
+    const trimmedIdentifier = safeTrim(identifier) || 'baker';
+
     try {
-      const trimmedIdentifier = safeTrim(identifier) || 'baker';
+      if (DEFAULT_API_BASE_URL) {
+        const client = createApiClient(DEFAULT_API_BASE_URL);
+        const resp = await client.authSignUp(trimmedIdentifier, password, fullName);
+        if (resp && resp.token) {
+          const user = resp.user || {};
+          setSession(
+            establishSession(
+              {
+                id: user.id || null,
+                username: user.username || trimmedIdentifier,
+                displayName: user.displayName || formatDisplayName(fullName, trimmedIdentifier),
+                token: resp.token,
+              },
+              true
+            )
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fallback to local session when backend not available or signup failed
       const displayName = formatDisplayName(fullName, trimmedIdentifier);
       setSession(
         establishSession(

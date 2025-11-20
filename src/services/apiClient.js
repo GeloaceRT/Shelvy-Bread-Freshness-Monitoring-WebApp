@@ -1,4 +1,8 @@
-const DEFAULT_API_BASE_URL = '';
+// Allow configuring backend URL via env var `REACT_APP_API_BASE_URL`.
+// If not set, the client will operate in local/mock-only mode.
+const DEFAULT_API_BASE_URL = (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_BASE_URL)
+  ? process.env.REACT_APP_API_BASE_URL
+  : '';
 
 class ApiError extends Error {
   constructor(message, status) {
@@ -63,6 +67,13 @@ export function createApiClient(baseUrl = DEFAULT_API_BASE_URL) {
 
     // Expose raw fetch for other callers if needed
     rawFetch: doFetch,
+    // Authentication endpoints
+    authLogin: async (identifier, password) => {
+      return doFetch('/auth/login', null, { method: 'POST', body: { identifier, password } }).catch(() => null);
+    },
+    authSignUp: async (identifier, password, fullName) => {
+      return doFetch('/auth/signup', null, { method: 'POST', body: { identifier, password, fullName } }).catch(() => null);
+    },
   };
 }
 

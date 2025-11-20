@@ -182,7 +182,14 @@ export default function HomePage({ user }) {
                         </svg>
                       </div>
                       <div className="device-details">
-                        <h4>{device.name}</h4>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                          <h4 style={{margin:0}}>{device.name}</h4>
+                          {device.hasAlert && (
+                            <span className="device-alert-badge" style={{background:'#F87171',color:'#fff',padding:'2px 6px',borderRadius:6,fontSize:12}}>
+                              ALERT
+                            </span>
+                          )}
+                        </div>
                         {isLive && (
                           <div className="connection-status">
                             <svg width="24" height="24" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">

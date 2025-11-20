@@ -146,9 +146,16 @@ export default function DevicesPage() {
             return (
               <div className={`device-card ${isActiveDevice ? "device-card-active" : ""}`} key={device.id}>
                 <div className="device-card-header">
-                  <div>
-                    <h2 className="device-card-title">{device.name}</h2>
-                    <p className="device-card-location">{device.location}</p>
+                  <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
+                    <div>
+                      <h2 className="device-card-title">{device.name}</h2>
+                      <p className="device-card-location">{device.location}</p>
+                    </div>
+                    {device.hasAlert && (
+                      <span style={{background:'#F87171',color:'#fff',padding:'4px 8px',borderRadius:6,fontSize:12}}>
+                        ALERT
+                      </span>
+                    )}
                   </div>
                   <span className={`device-status-pill ${isLive ? "device-status-live" : ""}`}>
                     {statusLabel}
